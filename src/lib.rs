@@ -336,6 +336,7 @@
 //! [`examples/multiple_errors.rs`]: https://github.com/yaahc/color-anyhow/blob/master/examples/multiple_errors.rs
 #![doc(html_root_url = "https://docs.rs/color-anyhow/0.5.0")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(backtrace, feature(backtrace))]
 #![warn(
     missing_docs,
     missing_doc_code_examples,
@@ -360,10 +361,13 @@
 )]
 #![allow(clippy::try_err)]
 pub use anyhow;
+#[cfg(not(backtrace))]
 use backtrace::Backtrace;
 use once_cell::sync::OnceCell;
 use section::help::HelpInfo;
 pub use section::{IndentedSection, Section, SectionExt};
+#[cfg(backtrace)]
+use std::backtrace::Backtrace;
 #[cfg(feature = "capture-spantrace")]
 use tracing_error::SpanTrace;
 

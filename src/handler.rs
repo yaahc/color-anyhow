@@ -2,27 +2,23 @@ use crate::config::installed_printer;
 use crate::ColorExt;
 use crate::{section::help::HelpInfo, writers::HeaderWriter, Handler};
 use ansi_term::Color::*;
-use backtrace::Backtrace;
 use indenter::{indented, Format};
 use std::fmt::Write;
 #[cfg(feature = "capture-spantrace")]
 use tracing_error::{ExtractSpanTrace, SpanTrace};
 
-impl Handler {
-    /// Return a reference to the captured `Backtrace` type
-    pub fn backtrace(&self) -> Option<&Backtrace> {
-        self.backtrace.as_ref()
-    }
-
-    /// Return a reference to the captured `SpanTrace` type
-    #[cfg(feature = "capture-spantrace")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "capture-spantrace")))]
-    pub fn span_trace(&self) -> Option<&SpanTrace> {
-        self.span_trace.as_ref()
-    }
-}
-
 impl anyhow::ReportHandler for Handler {
+    #[cfg(backtrace)]
+    fn backtrace<'a>(
+        &'a self,
+        error: &'a (dyn std::error::Error + 'static),
+    ) -> &std::backtrace::Backtrace {
+        error
+            .backtrace()
+            .or_else(|| self.backtrace.as_ref())
+            .expect("backtrace should have been captured")
+    }
+
     fn debug(
         &self,
         error: &(dyn std::error::Error + 'static),
@@ -86,7 +82,7 @@ impl anyhow::ReportHandler for Handler {
         }
 
         if let Some(backtrace) = self.backtrace.as_ref() {
-            let fmted_bt = installed_printer().format_backtrace(&backtrace);
+            let fmted_bt = installed_printer().format_backtrace(backtrace);
 
             write!(
                 indented(&mut separated.ready()).with_format(Format::Uniform { indentation: "  " }),

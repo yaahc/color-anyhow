@@ -1,5 +1,6 @@
 //! Configuration options for customizing the behavior of the provided panic
 //! and error reporting hooks
+use crate::Backtrace;
 use crate::ColorExt;
 use ansi_term::Color::*;
 use std::env;
@@ -56,7 +57,12 @@ impl fmt::Display for Frame {
             let color = Black.make_intense();
             writeln!(f, "{}", color.paint(&name[name.len() - 19..]))?;
         } else {
-            writeln!(f, "{}", name)?;
+            let color = if is_dependency_code {
+                Green
+            } else {
+                Red.make_intense()
+            };
+            writeln!(f, "{}", color.paint(name))?;
         }
 
         // Print source location, if known.
@@ -446,7 +452,7 @@ fn print_panic_info(pi: &std::panic::PanicInfo<'_>) -> std::io::Result<()> {
     }
 
     if panic_verbosity() != Verbosity::Minimal {
-        let bt = backtrace::Backtrace::new();
+        let bt = capture_backtrace();
         let fmt_bt = printer.format_backtrace(&bt);
         writeln!(out, "\n\n{}", fmt_bt)?;
     }
@@ -462,7 +468,7 @@ pub(crate) struct PanicHook {
 impl PanicHook {
     pub(crate) fn format_backtrace<'a>(
         &'a self,
-        trace: &'a backtrace::Backtrace,
+        trace: &'a crate::Backtrace,
     ) -> BacktraceFormatter<'a> {
         BacktraceFormatter {
             printer: self,
@@ -481,11 +487,21 @@ pub(crate) struct ReportHook {
     capture_span_trace_by_default: bool,
 }
 
+#[cfg(backtrace)]
+fn capture_backtrace() -> Backtrace {
+    Backtrace::capture()
+}
+
+#[cfg(not(backtrace))]
+fn capture_backtrace() -> Backtrace {
+    Backtrace::new()
+}
+
 impl ReportHook {
     #[allow(unused_variables)]
     pub(crate) fn default(&self, error: &(dyn std::error::Error + 'static)) -> crate::Handler {
         let backtrace = if lib_verbosity() != Verbosity::Minimal {
-            Some(backtrace::Backtrace::new())
+            Some(capture_backtrace())
         } else {
             None
         };
@@ -516,17 +532,35 @@ impl ReportHook {
 
 pub(crate) struct BacktraceFormatter<'a> {
     printer: &'a PanicHook,
-    inner: &'a backtrace::Backtrace,
+    inner: &'a crate::Backtrace,
 }
 
-impl fmt::Display for BacktraceFormatter<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{:━^80}", " BACKTRACE ")?;
+trait BacktraceFrames {
+    fn get_frames(&self) -> Vec<Frame>;
+}
 
-        // Collect frame info.
-        let frames: Vec<_> = self
-            .inner
-            .frames()
+#[cfg(backtrace)]
+impl BacktraceFrames for std::backtrace::Backtrace {
+    fn get_frames(&self) -> Vec<Frame> {
+        let parsed = btparse::deserialize(self).unwrap();
+        let frames = parsed.0;
+        frames
+            .into_iter()
+            .enumerate()
+            .map(|(n, frame)| Frame {
+                name: Some(frame.function),
+                filename: frame.file.map(Into::into),
+                lineno: frame.line.map(|lineno| lineno as _),
+                n: n + 1,
+            })
+            .collect()
+    }
+}
+
+#[cfg(not(backtrace))]
+impl BacktraceFrames for backtrace::Backtrace {
+    fn get_frames(&self) -> Vec<Frame> {
+        self.frames()
             .iter()
             .flat_map(|frame| frame.symbols())
             .zip(1usize..)
@@ -536,7 +570,16 @@ impl fmt::Display for BacktraceFormatter<'_> {
                 filename: sym.filename().map(|x| x.into()),
                 n,
             })
-            .collect();
+            .collect()
+    }
+}
+
+impl fmt::Display for BacktraceFormatter<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{:━^80}", " BACKTRACE ")?;
+
+        // Collect frame info.
+        let frames = self.inner.get_frames();
 
         let mut filtered_frames = frames.iter().collect();
         match env::var("COLORBT_SHOW_HIDDEN").ok().as_deref() {
