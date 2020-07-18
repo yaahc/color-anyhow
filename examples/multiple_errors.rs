@@ -1,13 +1,13 @@
-use color_eyre::{eyre::eyre, eyre::Report, Section};
+use color_anyhow::{anyhow::anyhow, anyhow::Error, Section};
 use thiserror::Error;
 
-fn main() -> Result<(), Report> {
-    color_eyre::install()?;
+fn main() -> Result<(), Error> {
+    color_anyhow::install()?;
     let errors = get_errors();
     join_errors(errors)
 }
 
-fn join_errors(results: Vec<Result<(), SourceError>>) -> Result<(), Report> {
+fn join_errors(results: Vec<Result<(), SourceError>>) -> Result<(), Error> {
     if results.iter().all(|r| r.is_ok()) {
         return Ok(());
     }
@@ -16,7 +16,7 @@ fn join_errors(results: Vec<Result<(), SourceError>>) -> Result<(), Report> {
         .into_iter()
         .filter(Result::is_err)
         .map(Result::unwrap_err)
-        .fold(Err(eyre!("encountered multiple errors")), |report, e| {
+        .fold(Err(anyhow!("encountered multiple errors")), |report, e| {
             report.error(e)
         })
 }

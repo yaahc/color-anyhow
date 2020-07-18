@@ -18,6 +18,7 @@ impl std::error::Error for InstallError {}
 
 /// A representation of a Frame from a Backtrace or a SpanTrace
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct Frame {
     /// Frame index
     pub n: usize,
@@ -27,7 +28,6 @@ pub struct Frame {
     pub lineno: Option<u32>,
     /// source file path
     pub filename: Option<PathBuf>,
-    _private_ctor: (),
 }
 
 impl fmt::Display for Frame {
@@ -243,7 +243,7 @@ impl HookBuilder {
     /// # Example
     ///
     /// ```rust
-    /// use color_eyre::config::HookBuilder;
+    /// use color_anyhow::config::HookBuilder;
     ///
     /// HookBuilder::new()
     ///     .install()
@@ -274,7 +274,7 @@ impl HookBuilder {
     /// # Examples
     ///
     /// ```rust
-    /// color_eyre::config::HookBuilder::default()
+    /// color_anyhow::config::HookBuilder::default()
     ///     .add_frame_filter(Box::new(|frames| {
     ///         let filters = &[
     ///             "uninteresting_function",
@@ -301,9 +301,9 @@ impl HookBuilder {
     }
 
     /// Install the given Hook as the global error report hook
-    pub fn install(self) -> Result<(), crate::eyre::Report> {
-        let (panic_hook, eyre_hook) = self.into_hooks();
-        crate::eyre::set_hook(Box::new(move |e| Box::new(eyre_hook.default(e))))?;
+    pub fn install(self) -> Result<(), crate::anyhow::Error> {
+        let (panic_hook, report_hook) = self.into_hooks();
+        crate::anyhow::set_hook(Box::new(move |e| Box::new(report_hook.default(e))))?;
         install_panic_hook();
 
         if crate::CONFIG.set(panic_hook).is_err() {
@@ -316,20 +316,20 @@ impl HookBuilder {
     /// Add the default set of filters to this `HookBuilder`'s configuration
     pub fn add_default_filters(self) -> Self {
         self.add_frame_filter(Box::new(default_frame_filter))
-            .add_frame_filter(Box::new(eyre_frame_filters))
+            .add_frame_filter(Box::new(anyhow_frame_filters))
     }
 
-    pub(crate) fn into_hooks(self) -> (PanicHook, EyreHook) {
+    pub(crate) fn into_hooks(self) -> (PanicHook, ReportHook) {
         let panic_hook = PanicHook {
             filters: self.filters.into_iter().map(Into::into).collect(),
             capture_span_trace_by_default: self.capture_span_trace_by_default,
         };
 
-        let eyre_hook = EyreHook {
+        let report_hook = ReportHook {
             capture_span_trace_by_default: self.capture_span_trace_by_default,
         };
 
-        (panic_hook, eyre_hook)
+        (panic_hook, report_hook)
     }
 }
 
@@ -355,11 +355,11 @@ fn default_frame_filter(frames: &mut Vec<&Frame>) {
     frames.retain(|x| rng.contains(&x.n))
 }
 
-fn eyre_frame_filters(frames: &mut Vec<&Frame>) {
+fn anyhow_frame_filters(frames: &mut Vec<&Frame>) {
     let filters = &[
-        "<color_eyre::Handler as eyre::EyreHandler>::default",
-        "eyre::",
-        "color_eyre::",
+        "<color_anyhow::Handler as anyhow::anyhowHandler>::default",
+        "anyhow::",
+        "color_anyhow::",
     ];
 
     frames.retain(|frame| {
@@ -477,11 +477,11 @@ impl PanicHook {
     }
 }
 
-pub(crate) struct EyreHook {
+pub(crate) struct ReportHook {
     capture_span_trace_by_default: bool,
 }
 
-impl EyreHook {
+impl ReportHook {
     #[allow(unused_variables)]
     pub(crate) fn default(&self, error: &(dyn std::error::Error + 'static)) -> crate::Handler {
         let backtrace = if lib_verbosity() != Verbosity::Minimal {
@@ -535,7 +535,6 @@ impl fmt::Display for BacktraceFormatter<'_> {
                 lineno: sym.lineno(),
                 filename: sym.filename().map(|x| x.into()),
                 n,
-                _private_ctor: (),
             })
             .collect();
 

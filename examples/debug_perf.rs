@@ -1,16 +1,16 @@
-//! example for manually testing the perf of color-eyre in debug vs release
+//! example for manually testing the perf of color-anyhow in debug vs release
 
-use color_eyre::{
-    eyre::Report,
-    eyre::{eyre, WrapErr},
+use color_anyhow::{
+    anyhow::Error,
+    anyhow::{anyhow, Context},
     Section,
 };
 use tracing::instrument;
 
-fn main() -> Result<(), Report> {
+fn main() -> Result<(), Error> {
     #[cfg(feature = "capture-spantrace")]
     install_tracing();
-    color_eyre::install()?;
+    color_anyhow::install()?;
 
     time_report();
 
@@ -25,8 +25,8 @@ fn time_report() {
 #[instrument]
 fn time_report_inner() {
     let start = std::time::Instant::now();
-    let report = Err::<(), Report>(eyre!("fake error"))
-        .wrap_err("wrapped error")
+    let report = Err::<(), Error>(anyhow!("fake error"))
+        .context("wrapped error")
         .suggestion("try using a file that exists next time")
         .unwrap_err();
 

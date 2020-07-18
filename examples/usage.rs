@@ -1,12 +1,12 @@
-use color_eyre::{eyre::Report, eyre::WrapErr, Section};
+use color_anyhow::{anyhow::Context, anyhow::Error, Section};
 use tracing::{info, instrument};
 
 #[instrument]
-fn main() -> Result<(), Report> {
+fn main() -> Result<(), Error> {
     #[cfg(feature = "capture-spantrace")]
     install_tracing();
 
-    color_eyre::install()?;
+    color_anyhow::install()?;
 
     Ok(read_config()?)
 }
@@ -30,14 +30,14 @@ fn install_tracing() {
 }
 
 #[instrument]
-fn read_file(path: &str) -> Result<(), Report> {
+fn read_file(path: &str) -> Result<(), Error> {
     info!("Reading file");
     Ok(std::fs::read_to_string(path).map(drop)?)
 }
 
 #[instrument]
-fn read_config() -> Result<(), Report> {
+fn read_config() -> Result<(), Error> {
     read_file("fake_file")
-        .wrap_err("Unable to read config")
+        .context("Unable to read config")
         .suggestion("try using a file that exists next time")
 }

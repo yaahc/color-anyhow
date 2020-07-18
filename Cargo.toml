@@ -1,12 +1,12 @@
 [package]
-name = "color-eyre"
+name = "color-anyhow"
 version = "0.5.0"
 authors = ["Jane Lusby <jlusby@yaah.dev>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
-description = "An error report handler for panics and eyre::Reports for colorful, consistent, and well formatted error reports for all kinds of errors."
-repository = "https://github.com/yaahc/color-eyre"
-documentation = "https://docs.rs/color-eyre"
+description = "An error report handler for panics and anyhow::Error types for colorful, consistent, and well formatted error reports for all kinds of errors."
+repository = "https://github.com/yaahc/color-anyhow"
+documentation = "https://docs.rs/color-anyhow"
 readme = "README.md"
 categories = []
 keywords = []
@@ -16,7 +16,7 @@ default = ["capture-spantrace"]
 capture-spantrace = ["tracing-error", "color-spantrace"]
 
 [dependencies]
-eyre = "0.6.0"
+anyhow = { git = "https://github.com/yaahc/anyhow.git", branch = "handler_hook" }
 tracing-error = { version = "0.1.2", optional = true }
 backtrace = { version = "0.3.48", features = ["gimli-symbolize"] }
 indenter = "0.3.0"

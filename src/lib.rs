@@ -1,11 +1,11 @@
-//! An error report handler for panics and the [`eyre`] crate for colorful, consistent, and well
+//! An error report handler for panics and the [`anyhow`] crate for colorful, consistent, and well
 //! formatted error reports for all kinds of errors.
 //!
 //! ## TLDR
 //!
-//! `color_eyre` helps you build error reports that look like this:
+//! `color_anyhow` helps you build error reports that look like this:
 //!
-//! <pre><font color="#06989A"><b>color-eyre</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font>
+//! <pre><font color="#06989A"><b>color-anyhow</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font>
 //! <font color="#4E9A06"><b>❯</b></font> cargo run --example custom_section
 //! <font color="#4E9A06"><b>    Finished</b></font> dev [unoptimized + debuginfo] target(s) in 0.04s
 //! <font color="#4E9A06"><b>     Running</b></font> `target/debug/examples/custom_section`
@@ -33,16 +33,16 @@
 //!
 //! ```toml
 //! [dependencies]
-//! color-eyre = "0.5"
+//! color-anyhow = "0.5"
 //! ```
 //!
 //! And install the panic and error report handlers:
 //!
 //! ```rust
-//! use color_eyre::eyre::Result;
+//! use color_anyhow::anyhow::Result;
 //!
 //! fn main() -> Result<()> {
-//!     color_eyre::install()?;
+//!     color_anyhow::install()?;
 //!
 //!     // ...
 //!     # Ok(())
@@ -56,12 +56,12 @@
 //!
 //! ```toml
 //! [dependencies]
-//! color-eyre = { version = "0.5", default-features = false }
+//! color-anyhow = { version = "0.5", default-features = false }
 //! ```
 //!
 //! ### Disabling SpanTrace capture by default
 //!
-//! color-eyre defaults to capturing span traces. This is because `SpanTrace`
+//! color-anyhow defaults to capturing span traces. This is because `SpanTrace`
 //! capture is significantly cheaper than `Backtrace` capture. However, like
 //! backtraces, span traces are most useful for debugging applications, and it's
 //! not uncommon to want to disable span trace capture by default to keep noise out
@@ -78,8 +78,8 @@
 //!
 //! ### Improving perf on debug builds
 //!
-//! In debug mode `color-eyre` behaves noticably worse than `eyre`. This is caused
-//! by the fact that `eyre` uses `std::backtrace::Backtrace` instead of
+//! In debug mode `color-anyhow` behaves noticably worse than `anyhow`. This is caused
+//! by the fact that `anyhow` uses `std::backtrace::Backtrace` instead of
 //! `backtrace::Backtrace`. The std version of backtrace is precompiled with
 //! optimizations, this means that whether or not you're in debug mode doesn't
 //! matter much for how expensive backtrace capture is, it will always be in the
@@ -91,7 +91,7 @@
 //! overrides](https://doc.rust-lang.org/cargo/reference/profiles.html#overrides)
 //! can be used to mitigate this problem. By configuring your project to always
 //! build `backtrace` with optimizations you should get the same performance from
-//! `color-eyre` that you're used to with `eyre`. To do so add the following to
+//! `color-anyhow` that you're used to with `anyhow`. To do so add the following to
 //! your Cargo.toml:
 //!
 //! ```toml
@@ -103,7 +103,7 @@
 //!
 //! ### Multiple report format verbosity levels
 //!
-//! `color-eyre` provides 3 different report formats for how it formats the captured `SpanTrace`
+//! `color-anyhow` provides 3 different report formats for how it formats the captured `SpanTrace`
 //! and `Backtrace`, minimal, short, and full. Take the below snippets of the output produced by [`examples/usage.rs`]:
 //!
 //! ---
@@ -111,7 +111,7 @@
 //! Running `cargo run --example usage` without `RUST_LIB_BACKTRACE` set will produce a minimal
 //! report like this:
 //!
-//! <pre><font color="#06989A"><b>color-eyre</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font> took <font color="#C4A000"><b>2s</b></font>
+//! <pre><font color="#06989A"><b>color-anyhow</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font> took <font color="#C4A000"><b>2s</b></font>
 //! <font color="#CC0000"><b>❯</b></font> cargo run --example usage
 //! <font color="#4E9A06"><b>    Finished</b></font> dev [unoptimized + debuginfo] target(s) in 0.04s
 //! <font color="#4E9A06"><b>     Running</b></font> `target/debug/examples/usage`
@@ -131,10 +131,10 @@
 //!
 //! <br>
 //!
-//! Running `RUST_LIB_BACKTRACE=1 cargo run --example usage` tells `color-eyre` to use the short
+//! Running `RUST_LIB_BACKTRACE=1 cargo run --example usage` tells `color-anyhow` to use the short
 //! format, which additionally capture a [`backtrace::Backtrace`]:
 //!
-//! <pre><font color="#06989A"><b>color-eyre</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font>
+//! <pre><font color="#06989A"><b>color-anyhow</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font>
 //! <font color="#CC0000"><b>❯</b></font> RUST_LIB_BACKTRACE=1 cargo run --example usage
 //! <font color="#4E9A06"><b>    Finished</b></font> dev [unoptimized + debuginfo] target(s) in 0.04s
 //! <font color="#4E9A06"><b>     Running</b></font> `target/debug/examples/usage`
@@ -153,22 +153,22 @@
 //!   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ BACKTRACE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //!   <font color="#34E2E2">                              ⋮ 5 frames hidden ⋮                               </font>
 //!    6: <font color="#F15D22">usage::read_file</font><font color="#88807C">::haee210cb22460af3</font>
-//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-eyre/examples/usage.rs</font>:<font color="#75507B">35</font>
+//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-anyhow/examples/usage.rs</font>:<font color="#75507B">35</font>
 //!    7: <font color="#F15D22">usage::read_config</font><font color="#88807C">::ha649ef4ec333524d</font>
-//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-eyre/examples/usage.rs</font>:<font color="#75507B">40</font>
+//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-anyhow/examples/usage.rs</font>:<font color="#75507B">40</font>
 //!    8: <font color="#F15D22">usage::main</font><font color="#88807C">::hbe443b50eac38236</font>
-//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-eyre/examples/usage.rs</font>:<font color="#75507B">11</font>
+//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-anyhow/examples/usage.rs</font>:<font color="#75507B">11</font>
 //!   <font color="#34E2E2">                              ⋮ 10 frames hidden ⋮                              </font>
 //!
 //! <font color="#34E2E2">Suggestion</font>: try using a file that exists next time</pre>
 //!
 //! <br>
 //!
-//! Finally, running `RUST_LIB_BACKTRACE=full cargo run --example usage` tells `color-eyre` to use
+//! Finally, running `RUST_LIB_BACKTRACE=full cargo run --example usage` tells `color-anyhow` to use
 //! the full format, which in addition to the above will attempt to include source lines where the
 //! error originated from, assuming it can find them on the disk.
 //!
-//! <pre><font color="#06989A"><b>color-eyre</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font>
+//! <pre><font color="#06989A"><b>color-anyhow</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font>
 //! <font color="#CC0000"><b>❯</b></font> RUST_LIB_BACKTRACE=full cargo run --example usage
 //! <font color="#4E9A06"><b>    Finished</b></font> dev [unoptimized + debuginfo] target(s) in 0.05s
 //! <font color="#4E9A06"><b>     Running</b></font> `target/debug/examples/usage`
@@ -184,35 +184,35 @@
 //!         30 │ }
 //!         31 │
 //!   <b>      32 &gt; #[instrument]</b>
-//!         33 │ fn read_file(path: &amp;str) -&gt; Result&lt;(), Report&gt; {
+//!         33 │ fn read_file(path: &amp;str) -&gt; Result&lt;(), Error&gt; {
 //!         34 │     info!(&quot;Reading file&quot;);
 //!    1: <font color="#F15D22">usage::read_config</font>
 //!       at <font color="#75507B">examples/usage.rs</font>:<font color="#75507B">38</font>
 //!         36 │ }
 //!         37 │
 //!   <b>      38 &gt; #[instrument]</b>
-//!         39 │ fn read_config() -&gt; Result&lt;(), Report&gt; {
+//!         39 │ fn read_config() -&gt; Result&lt;(), Error&gt; {
 //!         40 │     read_file(&quot;fake_file&quot;)
 //!
 //!   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ BACKTRACE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //!   <font color="#34E2E2">                              ⋮ 5 frames hidden ⋮                               </font>
 //!    6: <font color="#F15D22">usage::read_file</font><font color="#88807C">::haee210cb22460af3</font>
-//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-eyre/examples/usage.rs</font>:<font color="#75507B">35</font>
-//!         33 │ fn read_file(path: &amp;str) -&gt; Result&lt;(), Report&gt; {
+//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-anyhow/examples/usage.rs</font>:<font color="#75507B">35</font>
+//!         33 │ fn read_file(path: &amp;str) -&gt; Result&lt;(), Error&gt; {
 //!         34 │     info!(&quot;Reading file&quot;);
 //!   <font color="#D3D7CF"><b>      35 &gt;     Ok(std::fs::read_to_string(path).map(drop)?)</b></font>
 //!         36 │ }
 //!         37 │
 //!    7: <font color="#F15D22">usage::read_config</font><font color="#88807C">::ha649ef4ec333524d</font>
-//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-eyre/examples/usage.rs</font>:<font color="#75507B">40</font>
+//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-anyhow/examples/usage.rs</font>:<font color="#75507B">40</font>
 //!         38 │ #[instrument]
-//!         39 │ fn read_config() -&gt; Result&lt;(), Report&gt; {
+//!         39 │ fn read_config() -&gt; Result&lt;(), Error&gt; {
 //!   <font color="#D3D7CF"><b>      40 &gt;     read_file(&quot;fake_file&quot;)</b></font>
 //!         41 │         .wrap_err(&quot;Unable to read config&quot;)
 //!         42 │         .suggestion(&quot;try using a file that exists next time&quot;)
 //!    8: <font color="#F15D22">usage::main</font><font color="#88807C">::hbe443b50eac38236</font>
-//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-eyre/examples/usage.rs</font>:<font color="#75507B">11</font>
-//!          9 │     color_eyre::install()?;
+//!       at <font color="#75507B">/home/jlusby/git/yaahc/color-anyhow/examples/usage.rs</font>:<font color="#75507B">11</font>
+//!          9 │     color_anyhow::install()?;
 //!         10 │
 //!   <font color="#D3D7CF"><b>      11 &gt;     Ok(read_config()?)</b></font>
 //!         12 │ }
@@ -221,7 +221,7 @@
 //!
 //! <font color="#34E2E2">Suggestion</font>: try using a file that exists next time</pre>
 //!
-//! ### Custom `Section`s for error reports via [`Help`] trait
+//! ### Custom `Section`s for error reports via [`Section`] trait
 //!
 //! The `section` module provides helpers for adding extra sections to error
 //! reports. Sections are disinct from error messages and are displayed
@@ -230,24 +230,24 @@
 //! [`examples/custom_section.rs`]:
 //!
 //! ```rust
-//! use color_eyre::{eyre::eyre, SectionExt, Help, eyre::Report};
+//! use color_anyhow::{anyhow::anyhow, SectionExt, Section, anyhow::Error};
 //! use std::process::Command;
 //! use tracing::instrument;
 //!
 //! trait Output {
-//!     fn output2(&mut self) -> Result<String, Report>;
+//!     fn output2(&mut self) -> Result<String, Error>;
 //! }
 //!
 //! impl Output for Command {
 //!     #[instrument]
-//!     fn output2(&mut self) -> Result<String, Report> {
+//!     fn output2(&mut self) -> Result<String, Error> {
 //!         let output = self.output()?;
 //!
 //!         let stdout = String::from_utf8_lossy(&output.stdout);
 //!
 //!         if !output.status.success() {
 //!             let stderr = String::from_utf8_lossy(&output.stderr);
-//!             Err(eyre!("cmd exited with non-zero status code"))
+//!             Err(anyhow!("cmd exited with non-zero status code"))
 //!                 .with_section(move || stdout.trim().to_string().header("Stdout:"))
 //!                 .with_section(move || stderr.trim().to_string().header("Stderr:"))
 //!         } else {
@@ -266,7 +266,7 @@
 //! Running `cargo run --example custom_section` shows us how these sections are
 //! included in the output:
 //!
-//! <pre><font color="#06989A"><b>color-eyre</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font> took <font color="#C4A000"><b>2s</b></font>
+//! <pre><font color="#06989A"><b>color-anyhow</b></font> on <font color="#75507B"><b> hooked</b></font> <font color="#CC0000"><b>[$!] </b></font>is <font color="#FF8700"><b>📦 v0.5.0</b></font> via <font color="#CC0000"><b>🦀 v1.44.0</b></font> took <font color="#C4A000"><b>2s</b></font>
 //! <font color="#CC0000"><b>❯</b></font> cargo run --example custom_section
 //! <font color="#4E9A06"><b>    Finished</b></font> dev [unoptimized + debuginfo] target(s) in 0.04s
 //! <font color="#4E9A06"><b>     Running</b></font> `target/debug/examples/custom_section`
@@ -301,40 +301,40 @@
 //! done](https://github.com/rust-lang/rfcs/pull/2895) to improve this.
 //!
 //! For now however one way to work around this is to compose errors outside the
-//! error trait. `color-eyre` supports such composition in its error reports via
-//! the `Help` trait.
+//! error trait. `color-anyhow` supports such composition in its error reports via
+//! the `Section` trait.
 //!
 //! For an example of how to aggregate errors check out [`examples/multiple_errors.rs`].
 //!
 //! ### Custom configuration for `color-backtrace` for setting custom filters and more
 //!
 //! The pretty printing for backtraces and span traces isn't actually provided by
-//! `color-eyre`, but instead comes from its dependencies [`color-backtrace`] and
+//! `color-anyhow`, but instead comes from its dependencies [`color-backtrace`] and
 //! [`color-spantrace`]. `color-backtrace` in particular has many more features
-//! than are exported by `color-eyre`, such as customized color schemes, panic
+//! than are exported by `color-anyhow`, such as customized color schemes, panic
 //! hooks, and custom frame filters. The custom frame filters are particularly
-//! useful when combined with `color-eyre`, so to enable their usage we provide
+//! useful when combined with `color-anyhow`, so to enable their usage we provide
 //! the `install` fn for setting up a custom `BacktracePrinter` with custom
 //! filters installed.
 //!
 //! For an example of how to setup custom filters, check out [`examples/custom_filter.rs`].
 //!
-//! [`eyre`]: https://docs.rs/eyre
+//! [`anyhow`]: https://docs.rs/anyhow
 //! [`tracing-error`]: https://docs.rs/tracing-error
 //! [`color-backtrace`]: https://docs.rs/color-backtrace
-//! [`eyre::EyreHandler`]: https://docs.rs/eyre/*/eyre/trait.EyreHandler.html
+//! [`anyhow::anyhowHandler`]: https://docs.rs/anyhow/*/anyhow/trait.anyhowHandler.html
 //! [`backtrace::Backtrace`]: https://docs.rs/backtrace/*/backtrace/struct.Backtrace.html
 //! [`tracing_error::SpanTrace`]: https://docs.rs/tracing-error/*/tracing_error/struct.SpanTrace.html
 //! [`color-spantrace`]: https://github.com/yaahc/color-spantrace
-//! [`Help`]: https://docs.rs/color-eyre/*/color_eyre/trait.Help.html
-//! [`eyre::Report`]: https://docs.rs/eyre/*/eyre/struct.Report.html
-//! [`eyre::Result`]: https://docs.rs/eyre/*/eyre/type.Result.html
-//! [`Handler`]: https://docs.rs/color-eyre/*/color_eyre/struct.Handler.html
-//! [`examples/usage.rs`]: https://github.com/yaahc/color-eyre/blob/master/examples/usage.rs
-//! [`examples/custom_filter.rs`]: https://github.com/yaahc/color-eyre/blob/master/examples/custom_filter.rs
-//! [`examples/custom_section.rs`]: https://github.com/yaahc/color-eyre/blob/master/examples/custom_section.rs
-//! [`examples/multiple_errors.rs`]: https://github.com/yaahc/color-eyre/blob/master/examples/multiple_errors.rs
-#![doc(html_root_url = "https://docs.rs/color-eyre/0.5.0")]
+//! [`Section`]: https://docs.rs/color-anyhow/*/color_anyhow/trait.Section.html
+//! [`anyhow::Error`]: https://docs.rs/anyhow/*/anyhow/struct.Error.html
+//! [`anyhow::Result`]: https://docs.rs/anyhow/*/anyhow/type.Result.html
+//! [`Handler`]: https://docs.rs/color-anyhow/*/color_anyhow/struct.Handler.html
+//! [`examples/usage.rs`]: https://github.com/yaahc/color-anyhow/blob/master/examples/usage.rs
+//! [`examples/custom_filter.rs`]: https://github.com/yaahc/color-anyhow/blob/master/examples/custom_filter.rs
+//! [`examples/custom_section.rs`]: https://github.com/yaahc/color-anyhow/blob/master/examples/custom_section.rs
+//! [`examples/multiple_errors.rs`]: https://github.com/yaahc/color-anyhow/blob/master/examples/multiple_errors.rs
+#![doc(html_root_url = "https://docs.rs/color-anyhow/0.5.0")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(
     missing_docs,
@@ -359,21 +359,13 @@
     while_true
 )]
 #![allow(clippy::try_err)]
+pub use anyhow;
 use backtrace::Backtrace;
-pub use eyre;
-#[doc(hidden)]
-pub use eyre::Report;
-#[doc(hidden)]
-pub use eyre::Result;
 use once_cell::sync::OnceCell;
 use section::help::HelpInfo;
-#[doc(hidden)]
-pub use section::Section as Help;
 pub use section::{IndentedSection, Section, SectionExt};
 #[cfg(feature = "capture-spantrace")]
 use tracing_error::SpanTrace;
-#[doc(hidden)]
-pub use Handler as Context;
 
 pub mod config;
 mod handler;
@@ -381,18 +373,18 @@ pub(crate) mod private;
 pub mod section;
 mod writers;
 
-/// A custom handler type for [`eyre::Report`] which provides colorful error
+/// A custom handler type for [`anyhow::Error`] which provides colorful error
 /// reports and [`tracing-error`] support.
 ///
 /// # Details
 ///
 /// This type is not intended to be used directly, prefer using it via the
-/// [`color_eyre::Report`] and [`color_eyre::Result`] type aliases.
+/// [`color_anyhow::Error`] and [`color_anyhow::Result`] type aliases.
 ///
-/// [`eyre::Report`]: https://docs.rs/eyre/*/eyre/struct.Report.html
+/// [`anyhow::Error`]: https://docs.rs/anyhow/*/anyhow/struct.Error.html
 /// [`tracing-error`]: https://docs.rs/tracing-error
-/// [`color_eyre::Report`]: type.Report.html
-/// [`color_eyre::Result`]: type.Result.html
+/// [`color_anyhow::Error`]: type.Error.html
+/// [`color_anyhow::Result`]: type.Result.html
 #[derive(Debug)]
 pub struct Handler {
     backtrace: Option<Backtrace>,
@@ -412,27 +404,27 @@ trait ColorExt {
 ///
 /// # Details
 ///
-/// This function must be called to enable the customization of `eyre::Report`
-/// provided by `color-eyre`. This function should be called early, ideally
+/// This function must be called to enable the customization of `anyhow::Error`
+/// provided by `color-anyhow`. This function should be called early, ideally
 /// before any errors could be encountered.
 ///
 /// Only the first install will succeed. Calling this function after another
 /// report handler has been installed will cause an error. **Note**: This
-/// function _must_ be called before any `eyre::Report`s are constructed to
+/// function _must_ be called before any `anyhow::Error`s are constructed to
 /// prevent the default handler from being installed.
 ///
 /// # Examples
 ///
 /// ```rust
-/// use color_eyre::eyre::Result;
+/// use color_anyhow::anyhow::Result;
 ///
 /// fn main() -> Result<()> {
-///     color_eyre::install()?;
+///     color_anyhow::install()?;
 ///
 ///     // ...
 ///     # Ok(())
 /// }
 /// ```
-pub fn install() -> Result<(), crate::eyre::Report> {
+pub fn install() -> Result<(), crate::anyhow::Error> {
     config::HookBuilder::default().install()
 }

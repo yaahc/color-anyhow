@@ -22,9 +22,7 @@ impl Handler {
     }
 }
 
-impl Handler {}
-
-impl eyre::EyreHandler for Handler {
+impl anyhow::ReportHandler for Handler {
     fn debug(
         &self,
         error: &(dyn std::error::Error + 'static),
@@ -35,12 +33,12 @@ impl eyre::EyreHandler for Handler {
         }
 
         #[cfg(feature = "capture-spantrace")]
-        let errors = eyre::Chain::new(error)
+        let errors = anyhow::Chain::new(error)
             .filter(|e| e.span_trace().is_none())
             .enumerate();
 
         #[cfg(not(feature = "capture-spantrace"))]
-        let errors = eyre::Chain::new(error).enumerate();
+        let errors = anyhow::Chain::new(error).enumerate();
 
         let mut buf = String::new();
         for (n, error) in errors {
@@ -147,7 +145,7 @@ impl ColorExt for ansi_term::Style {
 pub(crate) fn get_deepest_spantrace<'a>(
     error: &'a (dyn std::error::Error + 'static),
 ) -> Option<&'a SpanTrace> {
-    eyre::Chain::new(error)
+    anyhow::Chain::new(error)
         .rev()
         .flat_map(|error| error.span_trace())
         .next()

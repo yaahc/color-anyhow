@@ -4,7 +4,7 @@ use tracing::instrument;
 fn main() {
     #[cfg(feature = "capture-spantrace")]
     install_tracing();
-    color_eyre::install().unwrap();
+    color_anyhow::install().unwrap();
 
     do_thing(42);
 }

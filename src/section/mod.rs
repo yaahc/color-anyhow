@@ -9,7 +9,7 @@ pub(crate) mod help;
 ///
 /// This helper provides two functions to help with constructing nicely formatted
 /// error reports. First, it handles indentation of every line of the body for
-/// you, and makes sure it is consistent with the rest of color-eyre's output.
+/// you, and makes sure it is consistent with the rest of color-anyhow's output.
 /// Second, it omits outputting the header if the body itself is empty,
 /// preventing unnecessary pollution of the report for sections with dynamic
 /// content.
@@ -17,24 +17,24 @@ pub(crate) mod help;
 /// # Examples
 ///
 /// ```rust
-/// use color_eyre::{eyre::eyre, SectionExt, Help, eyre::Report};
+/// use color_anyhow::{anyhow::anyhow, SectionExt, Section, anyhow::Error};
 /// use std::process::Command;
 /// use tracing::instrument;
 ///
 /// trait Output {
-///     fn output2(&mut self) -> Result<String, Report>;
+///     fn output2(&mut self) -> Result<String, Error>;
 /// }
 ///
 /// impl Output for Command {
 ///     #[instrument]
-///     fn output2(&mut self) -> Result<String, Report> {
+///     fn output2(&mut self) -> Result<String, Error> {
 ///         let output = self.output()?;
 ///
 ///         let stdout = String::from_utf8_lossy(&output.stdout);
 ///
 ///         if !output.status.success() {
 ///             let stderr = String::from_utf8_lossy(&output.stderr);
-///             Err(eyre!("cmd exited with non-zero status code"))
+///             Err(anyhow!("cmd exited with non-zero status code"))
 ///                 .with_section(move || stdout.trim().to_string().header("Stdout:"))
 ///                 .with_section(move || stderr.trim().to_string().header("Stderr:"))
 ///         } else {
@@ -91,16 +91,16 @@ pub trait SectionExt: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use color_eyre::{eyre::eyre, Help, SectionExt, eyre::Report};
+    /// use color_anyhow::{anyhow::anyhow, Section, SectionExt, anyhow::Error};
     ///
     /// let all_in_header = "header\n   body\n   body";
-    /// let report = Err::<(), Report>(eyre!("an error occurred"))
+    /// let report = Err::<(), Error>(anyhow!("an error occurred"))
     ///     .section(all_in_header)
     ///     .unwrap_err();
     ///
     /// let just_header = "header";
     /// let just_body = "body\nbody";
-    /// let report2 = Err::<(), Report>(eyre!("an error occurred"))
+    /// let report2 = Err::<(), Error>(anyhow!("an error occurred"))
     ///     .section(just_body.header(just_header))
     ///     .unwrap_err();
     ///
@@ -128,12 +128,12 @@ where
 ///
 /// # Details
 ///
-/// `color_eyre` provides two types of help text that can be attached to error reports: custom
+/// `color_anyhow` provides two types of help text that can be attached to error reports: custom
 /// sections and pre-configured sections. Custom sections are added via the `section` and
 /// `with_section` methods, and give maximum control over formatting.
 ///
 /// The pre-configured sections are provided via `suggestion`, `warning`, and `note`. These
-/// sections are displayed after all other sections with no extra newlines between subsequent Help
+/// sections are displayed after all other sections with no extra newlines between subsequent Section
 /// sections. They consist only of a header portion and are prepended with a colored string
 /// indicating the kind of section, e.g. `Note: This might have failed due to ..."
 pub trait Section<T>: crate::private::Sealed {
@@ -149,13 +149,13 @@ pub trait Section<T>: crate::private::Sealed {
     /// # Examples
     ///
     /// ```rust,should_panic
-    /// use color_eyre::{eyre::eyre, eyre::Report, Help};
+    /// use color_anyhow::{anyhow::anyhow, anyhow::Error, Section};
     ///
-    /// Err(eyre!("command failed"))
+    /// Err(anyhow!("command failed"))
     ///     .section("Please report bugs to https://real.url/bugs")?;
-    /// # Ok::<_, Report>(())
+    /// # Ok::<_, Error>(())
     /// ```
-    fn section<D>(self, section: D) -> eyre::Result<T>
+    fn section<D>(self, section: D) -> anyhow::Result<T>
     where
         D: Display + Send + Sync + 'static;
 
@@ -165,23 +165,23 @@ pub trait Section<T>: crate::private::Sealed {
     /// # Examples
     ///
     /// ```rust
-    /// use color_eyre::{eyre::eyre, eyre::Report, Help, SectionExt};
+    /// use color_anyhow::{anyhow::anyhow, anyhow::Error, Section, SectionExt};
     ///
     /// let output = std::process::Command::new("ls")
     ///     .output()?;
     ///
     /// let output = if !output.status.success() {
     ///     let stderr = String::from_utf8_lossy(&output.stderr);
-    ///     Err(eyre!("cmd exited with non-zero status code"))
+    ///     Err(anyhow!("cmd exited with non-zero status code"))
     ///         .with_section(move || stderr.trim().to_string().header("Stderr:"))?
     /// } else {
     ///     String::from_utf8_lossy(&output.stdout)
     /// };
     ///
     /// println!("{}", output);
-    /// # Ok::<_, Report>(())
+    /// # Ok::<_, Error>(())
     /// ```
-    fn with_section<D, F>(self, section: F) -> eyre::Result<T>
+    fn with_section<D, F>(self, section: F) -> anyhow::Result<T>
     where
         D: Display + Send + Sync + 'static,
         F: FnOnce() -> D;
@@ -192,19 +192,19 @@ pub trait Section<T>: crate::private::Sealed {
     /// # Examples
     ///
     /// ```rust,should_panic
-    /// use color_eyre::{eyre::eyre, eyre::Report, Help};
+    /// use color_anyhow::{anyhow::anyhow, anyhow::Error, Section};
     /// use thiserror::Error;
     ///
     /// #[derive(Debug, Error)]
     /// #[error("{0}")]
     /// struct StrError(&'static str);
     ///
-    /// Err(eyre!("command failed"))
+    /// Err(anyhow!("command failed"))
     ///     .error(StrError("got one error"))
     ///     .error(StrError("got a second error"))?;
-    /// # Ok::<_, Report>(())
+    /// # Ok::<_, Error>(())
     /// ```
-    fn error<E>(self, error: E) -> eyre::Result<T>
+    fn error<E>(self, error: E) -> anyhow::Result<T>
     where
         E: std::error::Error + Send + Sync + 'static;
 
@@ -214,19 +214,19 @@ pub trait Section<T>: crate::private::Sealed {
     /// # Examples
     ///
     /// ```rust,should_panic
-    /// use color_eyre::{eyre::eyre, eyre::Report, Help};
+    /// use color_anyhow::{anyhow::anyhow, anyhow::Error, Section};
     /// use thiserror::Error;
     ///
     /// #[derive(Debug, Error)]
     /// #[error("{0}")]
     /// struct StringError(String);
     ///
-    /// Err(eyre!("command failed"))
+    /// Err(anyhow!("command failed"))
     ///     .with_error(|| StringError("got one error".into()))
     ///     .with_error(|| StringError("got a second error".into()))?;
-    /// # Ok::<_, Report>(())
+    /// # Ok::<_, Error>(())
     /// ```
-    fn with_error<E, F>(self, error: F) -> eyre::Result<T>
+    fn with_error<E, F>(self, error: F) -> anyhow::Result<T>
     where
         F: FnOnce() -> E,
         E: std::error::Error + Send + Sync + 'static;
@@ -237,7 +237,7 @@ pub trait Section<T>: crate::private::Sealed {
     ///
     /// ```rust
     /// # use std::{error::Error, fmt::{self, Display}};
-    /// # use color_eyre::eyre::Result;
+    /// # use color_anyhow::anyhow::Result;
     /// # #[derive(Debug)]
     /// # struct FakeErr;
     /// # impl Display for FakeErr {
@@ -250,13 +250,13 @@ pub trait Section<T>: crate::private::Sealed {
     /// # fn fallible_fn() -> Result<(), FakeErr> {
     /// #       Ok(())
     /// # }
-    /// use color_eyre::Help as _;
+    /// use color_anyhow::Section as _;
     ///
     /// fallible_fn().note("This might have failed due to ...")?;
     /// # Ok(())
     /// # }
     /// ```
-    fn note<D>(self, note: D) -> eyre::Result<T>
+    fn note<D>(self, note: D) -> anyhow::Result<T>
     where
         D: Display + Send + Sync + 'static;
 
@@ -267,7 +267,7 @@ pub trait Section<T>: crate::private::Sealed {
     ///
     /// ```rust
     /// # use std::{error::Error, fmt::{self, Display}};
-    /// # use color_eyre::eyre::Result;
+    /// # use color_anyhow::anyhow::Result;
     /// # #[derive(Debug)]
     /// # struct FakeErr;
     /// # impl Display for FakeErr {
@@ -280,7 +280,7 @@ pub trait Section<T>: crate::private::Sealed {
     /// # fn fallible_fn() -> Result<(), FakeErr> {
     /// #       Ok(())
     /// # }
-    /// use color_eyre::Help as _;
+    /// use color_anyhow::Section as _;
     ///
     /// fallible_fn().with_note(|| {
     ///         format!("This might have failed due to ... It has failed {} times", 100)
@@ -288,31 +288,31 @@ pub trait Section<T>: crate::private::Sealed {
     /// # Ok(())
     /// # }
     /// ```
-    fn with_note<D, F>(self, f: F) -> eyre::Result<T>
+    fn with_note<D, F>(self, f: F) -> anyhow::Result<T>
     where
         D: Display + Send + Sync + 'static,
         F: FnOnce() -> D;
 
     /// Add a Warning to an error report, to be displayed after the chain of errors.
-    fn warning<D>(self, warning: D) -> eyre::Result<T>
+    fn warning<D>(self, warning: D) -> anyhow::Result<T>
     where
         D: Display + Send + Sync + 'static;
 
     /// Add a Warning to an error report, to be displayed after the chain of errors. The closure to
     /// create the Warning is lazily evaluated only in the case of an error.
-    fn with_warning<D, F>(self, f: F) -> eyre::Result<T>
+    fn with_warning<D, F>(self, f: F) -> anyhow::Result<T>
     where
         D: Display + Send + Sync + 'static,
         F: FnOnce() -> D;
 
     /// Add a Suggestion to an error report, to be displayed after the chain of errors.
-    fn suggestion<D>(self, suggestion: D) -> eyre::Result<T>
+    fn suggestion<D>(self, suggestion: D) -> anyhow::Result<T>
     where
         D: Display + Send + Sync + 'static;
 
     /// Add a Suggestion to an error report, to be displayed after the chain of errors. The closure
     /// to create the Suggestion is lazily evaluated only in the case of an error.
-    fn with_suggestion<D, F>(self, f: F) -> eyre::Result<T>
+    fn with_suggestion<D, F>(self, f: F) -> anyhow::Result<T>
     where
         D: Display + Send + Sync + 'static,
         F: FnOnce() -> D;
